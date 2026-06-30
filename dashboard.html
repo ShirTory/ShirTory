@@ -192,6 +192,23 @@
       table{display:block;overflow-x:auto}
     }
   </style>
+
+<!-- Firebase (Firestore) — keeps products synced live across all devices -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyB0NMwYgWK7Zr76urLEkcQfv1pTDXJ4SmM",
+    authDomain: "shirtory-4bcae.firebaseapp.com",
+    projectId: "shirtory-4bcae",
+    storageBucket: "shirtory-4bcae.firebasestorage.app",
+    messagingSenderId: "634050233913",
+    appId: "1:634050233913:web:3b46991a205f3160956fe8",
+    measurementId: "G-5YPCEJ34BE"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
 </head>
 <body>
 
@@ -648,8 +665,33 @@ const DEFAULT_SETTINGS = {
   fbURL:"#",igURL:"#",currency:"৳",stat1:"100+",stat2:"500+",stat3:"100%",
 };
 
-function getProducts(){ return JSON.parse(localStorage.getItem('shirtory_products')||JSON.stringify(DEFAULT_PRODUCTS)); }
-function setProducts(p){ localStorage.setItem('shirtory_products',JSON.stringify(p)); }
+// ---- PRODUCTS: now synced live via Firebase Firestore (works across all devices) ----
+let productsCache = DEFAULT_PRODUCTS;
+function getProducts(){ return productsCache; }
+function setProducts(p){
+  productsCache = p;
+  db.collection('shirtory').doc('products').set({ list: p })
+    .catch(err=>{ console.error(err); toast('❌ Cloud save failed: '+err.message,'error'); });
+}
+db.collection('shirtory').doc('products').onSnapshot(doc=>{
+  productsCache = (doc.exists && doc.data().list) ? doc.data().list : DEFAULT_PRODUCTS;
+  const activeId = document.querySelector('.page.active')?.id;
+  if(activeId==='page-dashboard') refreshDashboard();
+  if(activeId==='page-products') renderProductTable();
+}, err=>{ console.error(err); toast('❌ Cloud sync error: '+err.message,'error'); });
+
+// One-time auto-migration: if Firestore has no products yet, but this device's
+// localStorage has some (from before), upload them to the cloud automatically.
+db.collection('shirtory').doc('products').get().then(doc=>{
+  if(!doc.exists){
+    const local = JSON.parse(localStorage.getItem('shirtory_products')||'null');
+    if(local && local.length){
+      db.collection('shirtory').doc('products').set({list: local})
+        .then(()=>toast('☁️ Existing products uploaded to cloud!','success'));
+    }
+  }
+});
+
 function getUsers(){ return JSON.parse(localStorage.getItem('shirtory_users')||JSON.stringify(DEFAULT_USERS)); }
 function setUsers(u){ localStorage.setItem('shirtory_users',JSON.stringify(u)); }
 function getSettings(){ return Object.assign({},DEFAULT_SETTINGS,JSON.parse(localStorage.getItem('shirtory_settings')||'{}')); }
