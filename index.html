@@ -4,6 +4,22 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ShirTory — Your Style, Your Story</title>
+  <meta name="description" content="ShirTory — Premium clothing brand from Dhaka, Bangladesh. Shop tees, hoodies, jackets & more. Order on WhatsApp!"/>
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://shirtory.github.io/ShirTory/"/>
+  <meta property="og:title" content="ShirTory — Your Style, Your Story"/>
+  <meta property="og:description" content="Premium clothing brand from Dhaka, Bangladesh. Shop tees, hoodies, jackets & more. Order easily on WhatsApp!"/>
+  <meta property="og:image" content="https://shirtory.github.io/ShirTory/images/logo-full.jpg"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+  <meta property="og:site_name" content="ShirTory"/>
+  <meta property="og:locale" content="en_BD"/>
+  <!-- WhatsApp / Twitter -->
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="ShirTory — Your Style, Your Story"/>
+  <meta name="twitter:description" content="Premium clothing brand from Dhaka, Bangladesh."/>
+  <meta name="twitter:image" content="https://shirtory.github.io/ShirTory/images/logo-full.jpg"/>
   <link rel="icon" type="image/png" href="images/logo.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
   <style>
@@ -331,23 +347,6 @@
       .track-row{flex-direction:column}
     }
   </style>
-
-<!-- Firebase (Firestore) — loads products live, synced from the admin panel on any device -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyB0NMwYgWK7Zr76urLEkcQfv1pTDXJ4SmM",
-    authDomain: "shirtory-4bcae.firebaseapp.com",
-    projectId: "shirtory-4bcae",
-    storageBucket: "shirtory-4bcae.firebasestorage.app",
-    messagingSenderId: "634050233913",
-    appId: "1:634050233913:web:3b46991a205f3160956fe8",
-    measurementId: "G-5YPCEJ34BE"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-</script>
 </head>
 <body>
 
@@ -650,10 +649,11 @@ const DEFAULT_PRODUCTS=[
   {id:9,name:"Embroidered Cap",code:"ST-AC-009",price:500,oldPrice:0,category:"accessories",color:"#333",badge:"New",image:"",stock:30,sizes:[]},
 ];
 const BADGE_CLS={New:'badge-new',Hot:'badge-hot','Hot 🔥':'badge-hot',Limited:'badge-limited',Sale:'badge-sale',Bestseller:'badge-bestseller','Sold Out':'badge-soldout'};
-// ---- PRODUCTS: now synced live via Firebase Firestore (works across all devices) ----
-let productsCache = DEFAULT_PRODUCTS;
 function getProducts(){
-  return productsCache.map(p=>({
+  const stored=JSON.parse(localStorage.getItem('shirtory_products')||'null');
+  if(!stored) return DEFAULT_PRODUCTS;
+  // Normalize older product records that may lack new fields
+  return stored.map(p=>({
     oldPrice:0,stock:10,sizes:["S","M","L","XL"],category:p.category||'tshirt',
     ...p
   }));
@@ -729,18 +729,16 @@ function closeSoonModal(){
   filterProducts('all', document.querySelector('.cat-pill'));
 }
 
-let currentFilter='all', currentQuery='';
 function filterProducts(f,el){
   document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));
   if(el)el.classList.add('active');
-  currentFilter=f; currentQuery='';
   renderProducts(f);
 }
 function filterTo(cat){
   document.getElementById('shop').scrollIntoView({behavior:'smooth'});
   setTimeout(()=>{const el=document.querySelector('.cat-pill[onclick*="\''+cat+'\'"]');filterProducts(cat,el);},400);
 }
-function searchProducts(q){currentFilter='all'; currentQuery=q; renderProducts('all',q);}
+function searchProducts(q){renderProducts('all',q);}
 
 function sendToWhatsApp(){
   const name=document.getElementById('cf_name').value.trim();
@@ -787,11 +785,6 @@ function applySettings(){
 }
 
 applySettings();
-db.collection('shirtory').doc('products').onSnapshot(doc=>{
-  productsCache = (doc.exists && doc.data().list) ? doc.data().list : DEFAULT_PRODUCTS;
-  renderProducts(currentFilter, currentQuery);
-}, err=>{ console.error('Firestore sync error:', err); });
-
 renderProducts();
 </script>
 </body>
