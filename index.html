@@ -22,6 +22,22 @@
   <meta name="twitter:image" content="https://shirtory.github.io/ShirTory/images/logo-full.jpg"/>
   <link rel="icon" type="image/png" href="images/logo.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+  <!-- Firebase (Firestore) — reads live products & settings so the store shows the same content on every device -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyB0NMwYgWK7Zr76urLEkcQfv1pTDXJ4SmM",
+      authDomain: "shirtory-4bcae.firebaseapp.com",
+      projectId: "shirtory-4bcae",
+      storageBucket: "shirtory-4bcae.firebasestorage.app",
+      messagingSenderId: "634050233913",
+      appId: "1:634050233913:web:3b46991a205f3160956fe8",
+      measurementId: "G-5YPCEJ34BE"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
   <style>
     :root{
       --primary:#7B1A1A;
@@ -535,14 +551,49 @@
           <div class="form-group"><label class="f-label">Your Name *</label><input class="f-input" id="cf_name" placeholder="Shafi" required/></div>
           <div class="form-group"><label class="f-label">Phone *</label><input class="f-input" id="cf_phone" placeholder="+880 1XXX-XXXXXX" required/></div>
         </div>
-        <div class="form-group full"><label class="f-label">Product Code / Name *</label><input class="f-input" id="cf_product" placeholder="যেমন: ST-TS-001 অথবা Classic Logo Tee — Size M" required/></div>
+        <div class="form-group full">
+          <label class="f-label">Product বেছে নিন *</label>
+          <select class="f-input" id="cf_productSelect" onchange="onProductSelect()"></select>
+        </div>
+        <div class="form-group full" id="cf_customWrap" style="display:none">
+          <label class="f-label">Product এর নাম / বিবরণ লিখুন *</label>
+          <input class="f-input" id="cf_customProduct" placeholder="যেমন: Custom Printed Tee — নিজের ডিজাইন"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group" id="cf_sizeWrap" style="display:none">
+            <label class="f-label">Size</label>
+            <select class="f-input" id="cf_size"></select>
+          </div>
+          <div class="form-group">
+            <label class="f-label">Quantity *</label>
+            <input class="f-input" type="number" id="cf_qty" value="1" min="1" oninput="updateAmount()"/>
+          </div>
+        </div>
+        <div class="form-group full" id="cf_amountWrap" style="display:none;background:var(--bg);padding:10px 13px;border-radius:6px;border:1.5px solid var(--border)">
+          <span class="f-label">Total Amount</span>
+          <div style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:var(--primary)" id="cf_amountDisplay">—</div>
+        </div>
         <div class="form-group full"><label class="f-label">Delivery Address *</label><input class="f-input" id="cf_address" placeholder="Mirpur-1, Dhaka" required/></div>
+        <div class="form-group full">
+          <label class="f-label">ছবি যুক্ত করুন (ঐচ্ছিক — কাস্টম ডিজাইন / রেফারেন্স ছবি)</label>
+          <input class="f-input" type="file" accept="image/*" id="cf_image" onchange="onImageSelect(event)"/>
+          <div id="cf_imagePreviewWrap" style="display:none;align-items:center;gap:10px;margin-top:8px">
+            <img id="cf_imagePreview" style="width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border)"/>
+            <button type="button" onclick="removeImage()" style="font-size:0.75rem;color:var(--primary);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0">ছবি সরিয়ে ফেলুন</button>
+          </div>
+          <small id="cf_imgHint" style="color:var(--muted);font-size:0.7rem"></small>
+        </div>
         <div class="form-group full"><label class="f-label">Extra Note (optional)</label><textarea class="f-input" id="cf_note" placeholder="কোনো বিশেষ কথা থাকলে লিখুন…"></textarea></div>
-        <button class="btn-wa-submit" onclick="sendToWhatsApp()">
+        <button class="btn-wa-submit" id="cf_submitBtn" onclick="placeOrder()">
           <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          WhatsApp এ Order করুন
+          <span id="cf_submitLabel">WhatsApp এ Order করুন</span>
         </button>
-        <p class="form-hint">Submit করলে WhatsApp খুলবে — সেখানে Send করুন ✅</p>
+        <p class="form-hint" id="cf_hint">Submit করলে Order সেভ হবে ও WhatsApp খুলবে — সেখানে Send করুন ✅</p>
+        <div id="cf_successBox" style="display:none;background:#d1e7dd;border:1px solid #0a3622;border-radius:8px;padding:14px;text-align:center;margin-top:6px">
+          <div style="font-weight:700;color:#0a3622">✅ Order সফলভাবে জমা হয়েছে!</div>
+          <div style="font-size:0.85rem;color:#0a3622;margin-top:4px">আপনার Order ID: <b id="cf_successId">—</b></div>
+          <div style="font-size:0.75rem;color:#0a3622;margin-top:4px">উপরে ট্র্যাক করে অবস্থা জানতে পারবেন</div>
+        </div>
       </div>
     </div>
   </div>
@@ -567,6 +618,10 @@
         <div><div class="track-field-label">Product</div><div class="track-field-val" id="tr_product">—</div></div>
         <div><div class="track-field-label">Date</div><div class="track-field-val" id="tr_date">—</div></div>
         <div><div class="track-field-label">Amount</div><div class="track-field-val" id="tr_amount">—</div></div>
+      </div>
+      <div id="tr_imageWrap" style="display:none;margin:4px 0 8px">
+        <div class="track-field-label" style="margin-bottom:6px">আপলোড করা ছবি</div>
+        <img id="tr_image" style="max-width:140px;border-radius:8px;border:1px solid var(--border)"/>
       </div>
       <div style="background:var(--border);border-radius:999px;height:5px;overflow:hidden;margin-top:16px">
         <div id="tr_bar" style="height:100%;background:var(--primary);border-radius:999px;transition:width .6s;width:0%"></div>
@@ -649,8 +704,13 @@ const DEFAULT_PRODUCTS=[
   {id:9,name:"Embroidered Cap",code:"ST-AC-009",price:500,oldPrice:0,category:"accessories",color:"#333",badge:"New",image:"",stock:30,sizes:[]},
 ];
 const BADGE_CLS={New:'badge-new',Hot:'badge-hot','Hot 🔥':'badge-hot',Limited:'badge-limited',Sale:'badge-sale',Bestseller:'badge-bestseller','Sold Out':'badge-soldout'};
+// Live data cache, filled in by Firestore (cloud) so every visitor — any device,
+// any browser, the Facebook page link, etc. — sees the exact same products & content.
+let cloudProducts=null;
+let cloudSettings=null;
+
 function getProducts(){
-  const stored=JSON.parse(localStorage.getItem('shirtory_products')||'null');
+  const stored=cloudProducts || JSON.parse(localStorage.getItem('shirtory_products')||'null');
   if(!stored) return DEFAULT_PRODUCTS;
   // Normalize older product records that may lack new fields
   return stored.map(p=>({
@@ -658,7 +718,7 @@ function getProducts(){
     ...p
   }));
 }
-function getSettings(){return JSON.parse(localStorage.getItem('shirtory_settings')||'{}');}
+function getSettings(){return cloudSettings || JSON.parse(localStorage.getItem('shirtory_settings')||'{}');}
 
 function discountPct(price,oldPrice){
   if(!oldPrice||oldPrice<=price)return 0;
@@ -709,11 +769,9 @@ function renderProducts(filter='all',query=''){
         }).join('')+'</div>'
       : '';
 
-    const msg=encodeURIComponent('Hi ShirTory! I want to order:\nProduct Code: *'+(p.code||('ST-'+p.id))+'*\n'+p.name+' ('+cur+p.price+')\nPlease confirm availability, size & delivery details.');
-    const waHref='https://wa.me/'+WA+'?text='+msg;
     const waBtn = isSoldOut
       ? '<button class="wa-btn" disabled style="background:#9ca3af;cursor:not-allowed">Sold Out</button>'
-      : '<a class="wa-btn" href="'+waHref+'" target="_blank"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>Order Now</a>';
+      : '<button class="wa-btn" onclick="quickOrder('+p.id+')"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>Order Now</button>';
 
     return '<div class="product-card'+(isSoldOut?' soldout':'')+'"><div class="product-img-wrap" style="background:'+p.color+'12">'+bHTML+iHTML+'</div><div class="product-body"><div class="product-name">'+p.name+'</div><div class="product-code">Code: '+(p.code||('ST-'+p.id))+'</div><div class="product-cat">'+(CAT_LABELS[p.category]||p.category)+'</div>'+sizeHTML+priceHTML+stockHTML+'<div class="cart-row">'+waBtn+'</div></div></div>';
   }).join('');
@@ -729,41 +787,226 @@ function closeSoonModal(){
   filterProducts('all', document.querySelector('.cat-pill'));
 }
 
+let currentFilter='all', currentQuery='';
 function filterProducts(f,el){
   document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('active'));
   if(el)el.classList.add('active');
+  currentFilter=f; currentQuery='';
   renderProducts(f);
 }
 function filterTo(cat){
   document.getElementById('shop').scrollIntoView({behavior:'smooth'});
   setTimeout(()=>{const el=document.querySelector('.cat-pill[onclick*="\''+cat+'\'"]');filterProducts(cat,el);},400);
 }
-function searchProducts(q){renderProducts('all',q);}
+function searchProducts(q){currentQuery=q; renderProducts(currentFilter,q);}
 
-function sendToWhatsApp(){
-  const name=document.getElementById('cf_name').value.trim();
-  const phone=document.getElementById('cf_phone').value.trim();
-  const product=document.getElementById('cf_product').value.trim();
-  const address=document.getElementById('cf_address').value.trim();
-  const note=document.getElementById('cf_note').value.trim();
-  if(!name||!phone||!product||!address){alert('সব required field পূরণ করুন!');return;}
-  const orderId='SHT-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
-  const msg=encodeURIComponent('🛍️ *নতুন অর্ডার — ShirTory*\n\n📋 Order ID: *'+orderId+'*\n👤 নাম: '+name+'\n📞 ফোন: '+phone+'\n👕 Product: '+product+'\n📍 Address: '+address+(note?'\n📝 Note: '+note:'')+'\n\n✅ Please confirm!');
-  window.open('https://wa.me/'+WA+'?text='+msg,'_blank');
+function quickOrder(productId){
+  const sel=document.getElementById('cf_productSelect');
+  document.getElementById('order').scrollIntoView({behavior:'smooth'});
+  setTimeout(()=>{
+    sel.value=String(productId);
+    onProductSelect();
+    document.getElementById('cf_name').focus();
+  },350);
 }
 
-function trackOrder(){
+// ============================================================
+// ORDER FORM — product select, live amount, optional photo, Firestore save
+// ============================================================
+let cf_selectedImage=null; // compressed base64 data URL, or null
+
+function populateProductSelect(){
+  const sel=document.getElementById('cf_productSelect');
+  if(!sel) return;
+  const prevVal=sel.value;
+  const list=getProducts().filter(p=>(typeof p.stock!=='number')||p.stock>0);
+  sel.innerHTML='<option value="">-- একটি প্রোডাক্ট সিলেক্ট করুন --</option>'+
+    list.map(p=>'<option value="'+p.id+'">'+p.name+' — '+(getSettings().currency||'৳')+p.price+'</option>').join('')+
+    '<option value="custom">🎨 Custom / অন্য কিছু (নিজে লিখব)</option>';
+  if(prevVal && sel.querySelector('option[value="'+prevVal+'"]')) sel.value=prevVal;
+}
+
+function onProductSelect(){
+  const val=document.getElementById('cf_productSelect').value;
+  const customWrap=document.getElementById('cf_customWrap');
+  const sizeWrap=document.getElementById('cf_sizeWrap');
+  const sizeSel=document.getElementById('cf_size');
+  customWrap.style.display = (val==='custom') ? 'flex' : 'none';
+  if(val && val!=='custom'){
+    const p=getProducts().find(x=>String(x.id)===String(val));
+    const sizes=(p&&p.sizes)||[];
+    if(sizes.length){
+      sizeWrap.style.display='flex';
+      sizeSel.innerHTML=sizes.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+    } else {
+      sizeWrap.style.display='none';
+    }
+  } else {
+    sizeWrap.style.display='none';
+  }
+  updateAmount();
+}
+
+function updateAmount(){
+  const val=document.getElementById('cf_productSelect').value;
+  const qty=Math.max(1, parseInt(document.getElementById('cf_qty').value)||1);
+  const wrap=document.getElementById('cf_amountWrap');
+  const disp=document.getElementById('cf_amountDisplay');
+  const cur=getSettings().currency||'৳';
+  if(val && val!=='custom'){
+    const p=getProducts().find(x=>String(x.id)===String(val));
+    if(p){
+      wrap.style.display='block';
+      disp.textContent=cur+(p.price*qty)+' ('+qty+' x '+cur+p.price+')';
+      return;
+    }
+  }
+  wrap.style.display='none';
+}
+
+function onImageSelect(ev){
+  const file=ev.target.files[0];
+  const hint=document.getElementById('cf_imgHint');
+  if(!file){ return; }
+  if(!file.type.startsWith('image/')){ hint.textContent='শুধু ছবি ফাইল আপলোড করুন।'; ev.target.value=''; return; }
+  hint.textContent='ছবি প্রসেস হচ্ছে…';
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const img=new Image();
+    img.onload=function(){
+      const maxDim=1000;
+      let w=img.width, h=img.height;
+      if(w>h && w>maxDim){ h=Math.round(h*maxDim/w); w=maxDim; }
+      else if(h>maxDim){ w=Math.round(w*maxDim/h); h=maxDim; }
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      let quality=0.7;
+      let dataUrl=canvas.toDataURL('image/jpeg',quality);
+      // Keep it well under Firestore's 1MB doc limit
+      while(dataUrl.length>700000 && quality>0.25){
+        quality-=0.1;
+        dataUrl=canvas.toDataURL('image/jpeg',quality);
+      }
+      if(dataUrl.length>700000){
+        hint.textContent='⚠️ ছবিটা এখনও অনেক বড়, দয়া করে অন্য একটা ছোট ছবি ব্যবহার করুন।';
+        cf_selectedImage=null;
+        ev.target.value='';
+        return;
+      }
+      cf_selectedImage=dataUrl;
+      document.getElementById('cf_imagePreview').src=dataUrl;
+      document.getElementById('cf_imagePreviewWrap').style.display='flex';
+      hint.textContent='✅ ছবি যুক্ত হয়েছে';
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function removeImage(){
+  cf_selectedImage=null;
+  document.getElementById('cf_image').value='';
+  document.getElementById('cf_imagePreviewWrap').style.display='none';
+  document.getElementById('cf_imgHint').textContent='';
+}
+
+function generateOrderId(){
+  return 'SHT-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000);
+}
+
+async function placeOrder(){
+  const name=document.getElementById('cf_name').value.trim();
+  const phone=document.getElementById('cf_phone').value.trim();
+  const address=document.getElementById('cf_address').value.trim();
+  const note=document.getElementById('cf_note').value.trim();
+  const productVal=document.getElementById('cf_productSelect').value;
+  const qty=Math.max(1, parseInt(document.getElementById('cf_qty').value)||1);
+  const cur=getSettings().currency||'৳';
+
+  if(!name||!phone||!address||!productVal){ alert('সব required (*) field পূরণ করুন!'); return; }
+
+  let productName, productCode='', unitPrice=0, size='';
+  if(productVal==='custom'){
+    productName=document.getElementById('cf_customProduct').value.trim();
+    if(!productName){ alert('Custom product এর নাম/বিবরণ লিখুন!'); return; }
+  } else {
+    const p=getProducts().find(x=>String(x.id)===String(productVal));
+    if(!p){ alert('প্রোডাক্ট খুঁজে পাওয়া যায়নি, আবার সিলেক্ট করুন।'); return; }
+    productName=p.name; productCode=p.code||''; unitPrice=p.price;
+    size=document.getElementById('cf_size').value||'';
+  }
+  const amount=unitPrice*qty;
+  const orderId=generateOrderId();
+  const dateLabel=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+
+  const order={
+    id:orderId, name, phone, address, note,
+    product:productName+(size?(' — Size '+size):''),
+    productCode, size, qty, unitPrice, amount, currency:cur,
+    status:'pending', date:dateLabel,
+    image: cf_selectedImage || '',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  const btn=document.getElementById('cf_submitBtn');
+  const label=document.getElementById('cf_submitLabel');
+  btn.disabled=true; label.textContent='সেভ হচ্ছে…';
+
+  try{
+    await db.collection('orders').doc(orderId).set(order);
+  }catch(err){
+    console.error(err);
+    alert('❌ Order সেভ করা যায়নি: '+err.message+'\nইন্টারনেট চেক করে আবার চেষ্টা করুন।');
+    btn.disabled=false; label.textContent='WhatsApp এ Order করুন';
+    return;
+  }
+
+  const orderPageUrl=location.origin+location.pathname.substring(0,location.pathname.lastIndexOf('/')+1)+'order.html?id='+orderId;
+  const msgLines=[
+    '🛍️ *নতুন অর্ডার — ShirTory*','',
+    '📋 Order ID: *'+orderId+'*',
+    '👤 নাম: '+name,
+    '📞 ফোন: '+phone,
+    '👕 Product: '+order.product+' x '+qty,
+    (amount?'💰 Amount: '+cur+amount:'💰 Amount: কথা বলে জানানো হবে'),
+    '📍 Address: '+address,
+    (note?'📝 Note: '+note:''),
+    (cf_selectedImage?'🖼️ ছবি সহ ':'')+'Full Order Details: '+orderPageUrl,
+    '','✅ Please confirm!'
+  ].filter(Boolean);
+  const msg=encodeURIComponent(msgLines.join('\n'));
+  window.open('https://wa.me/'+WA+'?text='+msg,'_blank');
+
+  document.getElementById('cf_successId').textContent=orderId;
+  document.getElementById('cf_successBox').style.display='block';
+  btn.disabled=false; label.textContent='WhatsApp এ Order করুন';
+  // Reset form for a fresh order, but keep the success message visible
+  ['cf_name','cf_phone','cf_address','cf_note','cf_customProduct'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cf_qty').value=1;
+  document.getElementById('cf_productSelect').value='';
+  onProductSelect();
+  removeImage();
+}
+
+async function trackOrder(){
   const id=document.getElementById('trackInput').value.trim().toUpperCase();
-  const orders=JSON.parse(localStorage.getItem('shirtory_orders')||'[]');
-  const found=orders.find(o=>o.id.toUpperCase()===id);
   document.getElementById('trackResult').style.display='none';
   document.getElementById('trackNotFound').style.display='none';
+  if(!id) return;
+  let found=null;
+  try{
+    const doc=await db.collection('orders').doc(id).get();
+    if(doc.exists) found=doc.data();
+  }catch(err){ console.error(err); }
   if(!found){document.getElementById('trackNotFound').style.display='block';return;}
   document.getElementById('tr_id').textContent=found.id;
   document.getElementById('tr_name').textContent=found.name||'—';
-  document.getElementById('tr_product').textContent=found.product||'—';
+  document.getElementById('tr_product').textContent=(found.product||'—')+(found.qty?' x'+found.qty:'');
   document.getElementById('tr_date').textContent=found.date||'—';
-  document.getElementById('tr_amount').textContent=found.amount?'৳'+found.amount:'—';
+  document.getElementById('tr_amount').textContent=found.amount?(found.currency||'৳')+found.amount:'—';
+  const imgWrap=document.getElementById('tr_imageWrap');
+  if(found.image){ document.getElementById('tr_image').src=found.image; imgWrap.style.display='block'; }
+  else { imgWrap.style.display='none'; }
   const sm={pending:{pct:15,label:'Pending',bg:'#fff3cd',col:'#856404'},confirmed:{pct:40,label:'Confirmed ✅',bg:'#d1e7dd',col:'#0a3622'},shipped:{pct:75,label:'Shipped 🚚',bg:'#cfe2ff',col:'#084298'},delivered:{pct:100,label:'Delivered 🏠',bg:'#d1e7dd',col:'#0a3622'}};
   const st=sm[found.status||'pending'];
   const badge=document.getElementById('tr_badge');
@@ -784,8 +1027,23 @@ function applySettings(){
   if(s.stat3){document.getElementById('stat3').textContent=s.stat3;document.getElementById('hstat3').textContent=s.stat3;}
 }
 
+// Initial paint using whatever is cached locally (instant, no flash of "no products")
 applySettings();
 renderProducts();
+populateProductSelect();
+
+// Then connect to the live cloud database — this is what makes the store show the
+// SAME products/content on every device, browser, and the Facebook page link.
+db.collection('shirtory').doc('products').onSnapshot(doc=>{
+  cloudProducts = (doc.exists && doc.data().list) ? doc.data().list : null;
+  renderProducts(currentFilter, currentQuery);
+  populateProductSelect();
+}, err=>console.error('Product sync error:', err));
+
+db.collection('shirtory').doc('settings').onSnapshot(doc=>{
+  cloudSettings = doc.exists ? doc.data() : null;
+  applySettings();
+}, err=>console.error('Settings sync error:', err));
 </script>
 </body>
 </html>
