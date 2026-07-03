@@ -701,6 +701,13 @@ function renderProducts(filter='all',query=''){
   }
   if(query)list=list.filter(p=>p.name.toLowerCase().includes(query.toLowerCase())||p.category.includes(query.toLowerCase()));
 
+  // Display order = admin's chosen order (the order they're saved in), EXCEPT
+  // out-of-stock products always sink to the bottom automatically, regardless
+  // of where the admin placed them in the list.
+  const inStock=list.filter(p=>!(typeof p.stock==='number' && p.stock<=0));
+  const outOfStock=list.filter(p=>typeof p.stock==='number' && p.stock<=0);
+  list=inStock.concat(outOfStock);
+
   if(!list.length){
     grid.innerHTML='<div class="no-products">No products found in this category yet. Please check back soon!</div>';
     return;

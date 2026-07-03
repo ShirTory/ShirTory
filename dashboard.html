@@ -77,6 +77,10 @@
   @media(max-width:600px){.grid2{grid-template-columns:1fr}}
 
   .prod-item{display:flex;gap:14px;align-items:center;padding:14px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--surface2)}
+  .reorder-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0}
+  .reorder-col .btn{padding:3px 9px;font-size:.8rem;line-height:1}
+  .reorder-col .btn:disabled{opacity:.25;cursor:not-allowed}
+  .pos-badge{font-size:.68rem;font-weight:700;color:var(--muted)}
   .prod-thumb{width:56px;height:56px;border-radius:8px;background:#222;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;font-weight:700;color:var(--muted)}
   .prod-thumb img{width:100%;height:100%;object-fit:cover}
   .prod-info{flex:1;min-width:0}
@@ -134,7 +138,7 @@
       <h2>Products</h2>
       <button class="btn btn-gold" onclick="openProductForm()">+ Add Product</button>
     </div>
-    <div class="hint">এখানে যা কিছু Save করবে সাথে সাথেই সব ডিভাইসে (ওয়েবসাইটে) live দেখা যাবে।</div>
+    <div class="hint">এখানে যা কিছু Save করবে সাথে সাথেই সব ডিভাইসে (ওয়েবসাইটে) live দেখা যাবে। ↑ ↓ বাটন দিয়ে কোন Product আগে/মাঝে/পরে শপে দেখাবে তা সাজাও — যেটা উপরে থাকবে সেটা শপে সবার আগে দেখাবে। Stock 0 হয়ে গেলে সেই Product অটোমেটিক্যালি শপে সবার নিচে চলে যাবে, তোমাকে আলাদা করে সরাতে হবে না।</div>
     <div id="productList"></div>
   </div>
 
@@ -275,12 +279,17 @@ let products = [];
 function renderProductList(){
   const wrap = document.getElementById('productList');
   if(!products.length){ wrap.innerHTML = '<div class="empty">কোনো Product নেই — উপরে থেকে Add Product চাপো।</div>'; return; }
-  wrap.innerHTML = products.map(p=>{
+  wrap.innerHTML = products.map((p,idx)=>{
     const stock = typeof p.stock==='number' ? p.stock : 0;
     const sc = stock<=0 ? 'stock-out' : (stock<=5 ? 'stock-low' : 'stock-ok');
-    const stockLbl = stock<=0 ? 'Sold Out' : stock+' in stock';
+    const stockLbl = stock<=0 ? 'Sold Out — শপে অটো নিচে চলে যাবে' : stock+' in stock';
     const thumb = p.image ? '<img src="'+p.image+'" onerror="this.parentElement.textContent=\''+(p.name?p.name[0]:'?')+'\'"/>' : (p.name?p.name[0]:'?');
     return '<div class="prod-item">'
+      + '<div class="reorder-col">'
+      + '<button class="btn btn-ghost btn-sm" title="উপরে সরাও" onclick="moveProduct('+idx+',-1)"'+(idx===0?' disabled':'')+'>↑</button>'
+      + '<span class="pos-badge">'+(idx+1)+'</span>'
+      + '<button class="btn btn-ghost btn-sm" title="নিচে সরাও" onclick="moveProduct('+idx+',1)"'+(idx===products.length-1?' disabled':'')+'>↓</button>'
+      + '</div>'
       + '<div class="prod-thumb">'+thumb+'</div>'
       + '<div class="prod-info"><div class="n">'+p.name+'</div>'
       + '<div class="m">'+(p.code||'')+' · '+(CAT_LABELS[p.category]||p.category)+' · ৳'+p.price+(p.oldPrice>p.price?' <s style="color:#666">৳'+p.oldPrice+'</s>':'')+'</div>'
@@ -290,6 +299,15 @@ function renderProductList(){
       + (isMaster ? '<button class="btn btn-danger btn-sm" onclick="deleteProduct('+p.id+')">Delete</button>' : '')
       + '</div></div>';
   }).join('');
+}
+
+function moveProduct(idx, dir){
+  const newIdx = idx + dir;
+  if(newIdx < 0 || newIdx >= products.length) return;
+  const tmp = products[idx];
+  products[idx] = products[newIdx];
+  products[newIdx] = tmp;
+  persistProducts();
 }
 
 function nextProductId(){
