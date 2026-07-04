@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Login — ShirTory</title>
+<link rel="icon" type="image/png" href="images/logo.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyB0NMwYgWK7Zr76urLEkcQfv1pTDXJ4SmM",
+    authDomain: "shirtory-4bcae.firebaseapp.com",
+    projectId: "shirtory-4bcae",
+    storageBucket: "shirtory-4bcae.firebasestorage.app",
+    messagingSenderId: "634050233913",
+    appId: "1:634050233913:web:3b46991a205f3160956fe8",
+    measurementId: "G-5YPCEJ34BE"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+<script>
+// If already logged in, skip straight to the dashboard.
+(function(){
+  try{
+    const s = JSON.parse(sessionStorage.getItem('shirtory_session'));
+    if(s && s.username && s.role){ window.location.href='dashboard.html'; }
+  }catch(e){}
+})();
+</script>
+<style>
+  :root{
+    --primary:#7B1A1A; --primary-dark:#5a1212; --gold:#C9A84C;
+    --bg:#f8f8f8; --white:#ffffff; --ink:#1a1a1a; --muted:#6b7280; --border:#e5e7eb;
+    --shadow:0 4px 20px rgba(0,0,0,0.08);
+  }
+  *,*::before,*::after{box-sizing:border-box; margin:0; padding:0}
+  body{
+    font-family:'Inter',sans-serif; background:var(--bg); color:var(--ink);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .card{
+    width:100%; max-width:400px; background:var(--white); border-radius:16px;
+    box-shadow:var(--shadow); padding:36px 30px; border:1px solid var(--border);
+  }
+  .logo-row{display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:26px}
+  .logo-row img{width:56px; height:56px; object-fit:contain}
+  .logo-row .brand{font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; color:var(--primary)}
+  .logo-row .brand span{color:var(--gold)}
+  .logo-row .sub{font-size:0.78rem; color:var(--muted); letter-spacing:0.5px}
+  h1.title{font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; text-align:center; margin-bottom:6px}
+  .subtitle{font-size:0.85rem; color:var(--muted); text-align:center; margin-bottom:26px}
+  label{display:block; font-size:0.82rem; font-weight:600; margin-bottom:6px; color:var(--ink)}
+  .field{margin-bottom:16px}
+  input{
+    width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:10px;
+    font-size:0.95rem; font-family:'Inter',sans-serif; outline:none; transition:border-color .15s;
+    background:#fbfbfb;
+  }
+  input:focus{border-color:var(--primary); background:var(--white)}
+  .pw-wrap{position:relative}
+  .pw-toggle{
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    background:none; border:none; cursor:pointer; font-size:0.78rem; color:var(--muted); font-weight:600;
+  }
+  .btn-login{
+    width:100%; padding:13px; margin-top:6px; border:none; border-radius:10px;
+    background:var(--primary); color:#fff; font-size:0.95rem; font-weight:700;
+    cursor:pointer; transition:background .15s; font-family:'Inter',sans-serif;
+  }
+  .btn-login:hover{background:var(--primary-dark)}
+  .btn-login:disabled{opacity:0.6; cursor:not-allowed}
+  .error-msg{
+    display:none; background:#fdecec; color:#b42318; border:1px solid #f5b5ac;
+    padding:10px 12px; border-radius:8px; font-size:0.82rem; margin-bottom:16px; text-align:center;
+  }
+  .loading-msg{
+    display:none; text-align:center; font-size:0.8rem; color:var(--muted); margin-bottom:14px;
+  }
+  .back-link{
+    display:block; text-align:center; margin-top:20px; font-size:0.8rem; color:var(--muted); text-decoration:none;
+  }
+  .back-link:hover{color:var(--primary)}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo-row">
+    <img src="images/logo.png" alt="ShirTory"/>
+    <div class="brand">Shir<span>Tory</span></div>
+    <div class="sub">DEFINE YOUR STORY</div>
+  </div>
+
+  <h1 class="title">Admin Login</h1>
+  <p class="subtitle">Dashboard এ ঢুকতে আপনার username ও password দিন</p>
+
+  <div class="loading-msg" id="loadingMsg">🔄 সার্ভারের সাথে যোগাযোগ হচ্ছে...</div>
+  <div class="error-msg" id="errorMsg"></div>
+
+  <form id="loginForm" onsubmit="return handleLogin(event)">
+    <div class="field">
+      <label>Username</label>
+      <input id="username" type="text" autocomplete="username" required/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <div class="pw-wrap">
+        <input id="password" type="password" autocomplete="current-password" required/>
+        <button type="button" class="pw-toggle" onclick="togglePw()" id="pwToggleBtn">Show</button>
+      </div>
+    </div>
+    <button type="submit" class="btn-login" id="loginBtn">Login</button>
+  </form>
+
+  <a href="index.html" class="back-link">← Back to Website</a>
+</div>
+
+<script>
+const DEFAULT_USERS = [
+  {username:'shirtory', password:'786786', role:'master_admin', name:'Master Admin'},
+  {username:'mod1', password:'mod123', role:'moderator', name:'Moderator 1'},
+];
+
+function togglePw(){
+  const pw = document.getElementById('password');
+  const btn = document.getElementById('pwToggleBtn');
+  if(pw.type === 'password'){ pw.type = 'text'; btn.textContent = 'Hide'; }
+  else{ pw.type = 'password'; btn.textContent = 'Show'; }
+}
+
+function showError(msg){
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError(){
+  document.getElementById('errorMsg').style.display = 'none';
+}
+
+async function getUserList(){
+  try{
+    const doc = await db.collection('shirtory').doc('users').get();
+    if(doc.exists && Array.isArray(doc.data().list) && doc.data().list.length){
+      return doc.data().list;
+    }
+  }catch(err){
+    console.error('Could not fetch cloud users, falling back to defaults:', err);
+  }
+  return DEFAULT_USERS;
+}
+
+async function handleLogin(e){
+  e.preventDefault();
+  hideError();
+
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('loginBtn');
+  const loadingMsg = document.getElementById('loadingMsg');
+
+  if(!username || !password){
+    showError('❌ Username ও Password দিতে হবে');
+    return false;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+  loadingMsg.style.display = 'block';
+
+  const list = await getUserList();
+  const match = list.find(u =>
+    u.username.toLowerCase() === username.toLowerCase() && u.password === password
+  );
+
+  loadingMsg.style.display = 'none';
+  btn.disabled = false;
+  btn.textContent = 'Login';
+
+  if(!match){
+    showError('❌ ভুল Username অথবা Password');
+    return false;
+  }
+
+  sessionStorage.setItem('shirtory_session', JSON.stringify({
+    username: match.username,
+    role: match.role,
+    name: match.name || match.username
+  }));
+
+  window.location.href = 'dashboard.html';
+  return false;
+}
+</script>
+
+</body>
+</html>
