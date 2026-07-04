@@ -5,16 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Admin Login — ShirTory</title>
 <link rel="icon" type="image/png" href="images/logo.png"/>
-<script>
-// If already logged in, skip straight to the dashboard.
-(function(){
-  try{
-    const s = JSON.parse(sessionStorage.getItem('shirtory_session'));
-    if(s && s.username && s.role){ window.location.href='dashboard.html'; }
-  }catch(e){}
-})();
-</script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
@@ -30,44 +21,101 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 </script>
+<script>
+// If already logged in, skip straight to the dashboard.
+(function(){
+  try{
+    const s = JSON.parse(sessionStorage.getItem('shirtory_session'));
+    if(s && s.username && s.role){ window.location.href='dashboard.html'; }
+  }catch(e){}
+})();
+</script>
 <style>
-  :root{--bg:#0a0a0a;--surface:#141414;--surface2:#1b1b1b;--ink:#f0ece4;--muted:#8a8a8a;--accent:#C9A84C;--accent2:#7B1A1A;--border:#242424}
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-  .box{width:100%;max-width:380px}
-  .logo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:26px}
-  .logo-row img{width:38px;height:38px;object-fit:contain}
-  .logo-row span{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700}
-  .logo-row span b{color:var(--accent2)}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 26px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
-  .card h2{font-family:'Playfair Display',serif;font-size:1.15rem;margin-bottom:4px;text-align:center}
-  .card p.sub{font-size:.8rem;color:var(--muted);text-align:center;margin-bottom:22px}
-  label{display:block;font-size:.72rem;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px;margin-top:16px}
-  label:first-of-type{margin-top:0}
-  input{width:100%;font:inherit;color:var(--ink);background:#0f0f0f;border:1px solid var(--border);border-radius:8px;padding:11px 13px;outline:none;transition:border-color .15s}
-  input:focus{border-color:var(--accent)}
-  .btn-login{width:100%;margin-top:22px;background:var(--accent2);color:#fff;border:none;border-radius:8px;padding:13px;font-size:.9rem;font-weight:700;cursor:pointer;transition:opacity .15s}
-  .btn-login:hover{opacity:.9}
-  .btn-login:disabled{opacity:.6;cursor:not-allowed}
-  .err{display:none;background:#8a202022;border:1px solid #8a2020;color:#f3a3a3;font-size:.78rem;border-radius:8px;padding:10px 12px;margin-top:16px;text-align:center}
-  .back{display:block;text-align:center;margin-top:18px;font-size:.78rem;color:var(--muted);text-decoration:none}
-  .back:hover{color:var(--ink)}
+  :root{
+    --primary:#7B1A1A; --primary-dark:#5a1212; --gold:#C9A84C;
+    --bg:#f8f8f8; --white:#ffffff; --ink:#1a1a1a; --muted:#6b7280; --border:#e5e7eb;
+    --shadow:0 4px 20px rgba(0,0,0,0.08);
+  }
+  *,*::before,*::after{box-sizing:border-box; margin:0; padding:0}
+  body{
+    font-family:'Inter',sans-serif; background:var(--bg); color:var(--ink);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .card{
+    width:100%; max-width:400px; background:var(--white); border-radius:16px;
+    box-shadow:var(--shadow); padding:36px 30px; border:1px solid var(--border);
+  }
+  .logo-row{display:flex; flex-direction:column; align-items:center; gap:8px; margin-bottom:26px}
+  .logo-row img{width:56px; height:56px; object-fit:contain}
+  .logo-row .brand{font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; color:var(--primary)}
+  .logo-row .brand span{color:var(--gold)}
+  .logo-row .sub{font-size:0.78rem; color:var(--muted); letter-spacing:0.5px}
+  h1.title{font-family:'Playfair Display',serif; font-size:1.25rem; font-weight:700; text-align:center; margin-bottom:6px}
+  .subtitle{font-size:0.85rem; color:var(--muted); text-align:center; margin-bottom:26px}
+  label{display:block; font-size:0.82rem; font-weight:600; margin-bottom:6px; color:var(--ink)}
+  .field{margin-bottom:16px}
+  input{
+    width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:10px;
+    font-size:0.95rem; font-family:'Inter',sans-serif; outline:none; transition:border-color .15s;
+    background:#fbfbfb;
+  }
+  input:focus{border-color:var(--primary); background:var(--white)}
+  .pw-wrap{position:relative}
+  .pw-toggle{
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    background:none; border:none; cursor:pointer; font-size:0.78rem; color:var(--muted); font-weight:600;
+  }
+  .btn-login{
+    width:100%; padding:13px; margin-top:6px; border:none; border-radius:10px;
+    background:var(--primary); color:#fff; font-size:0.95rem; font-weight:700;
+    cursor:pointer; transition:background .15s; font-family:'Inter',sans-serif;
+  }
+  .btn-login:hover{background:var(--primary-dark)}
+  .btn-login:disabled{opacity:0.6; cursor:not-allowed}
+  .error-msg{
+    display:none; background:#fdecec; color:#b42318; border:1px solid #f5b5ac;
+    padding:10px 12px; border-radius:8px; font-size:0.82rem; margin-bottom:16px; text-align:center;
+  }
+  .loading-msg{
+    display:none; text-align:center; font-size:0.8rem; color:var(--muted); margin-bottom:14px;
+  }
+  .back-link{
+    display:block; text-align:center; margin-top:20px; font-size:0.8rem; color:var(--muted); text-decoration:none;
+  }
+  .back-link:hover{color:var(--primary)}
 </style>
 </head>
 <body>
-<div class="box">
-  <div class="logo-row"><img src="images/logo.png" alt="ShirTory"/><span>Shir<b>Tory</b></span></div>
-  <div class="card">
-    <h2>Admin Login</h2>
-    <p class="sub">শুধুমাত্র অথরাইজড টিম মেম্বারদের জন্য</p>
-    <label>Username</label>
-    <input id="l_username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"/>
-    <label>Password</label>
-    <input id="l_password" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
-    <button class="btn-login" id="loginBtn" onclick="doLogin()">Login</button>
-    <div class="err" id="loginErr">❌ Username বা Password ভুল হয়েছে</div>
+
+<div class="card">
+  <div class="logo-row">
+    <img src="images/logo.png" alt="ShirTory"/>
+    <div class="brand">Shir<span>Tory</span></div>
+    <div class="sub">DEFINE YOUR STORY</div>
   </div>
-  <a href="index.html" class="back">&larr; ShirTory ওয়েবসাইটে ফিরে যান</a>
+
+  <h1 class="title">Admin Login</h1>
+  <p class="subtitle">Dashboard এ ঢুকতে আপনার username ও password দিন</p>
+
+  <div class="loading-msg" id="loadingMsg">🔄 সার্ভারের সাথে যোগাযোগ হচ্ছে...</div>
+  <div class="error-msg" id="errorMsg"></div>
+
+  <form id="loginForm" onsubmit="return handleLogin(event)">
+    <div class="field">
+      <label>Username</label>
+      <input id="username" type="text" autocomplete="username" required/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <div class="pw-wrap">
+        <input id="password" type="password" autocomplete="current-password" required/>
+        <button type="button" class="pw-toggle" onclick="togglePw()" id="pwToggleBtn">Show</button>
+      </div>
+    </div>
+    <button type="submit" class="btn-login" id="loginBtn">Login</button>
+  </form>
+
+  <a href="index.html" class="back-link">← Back to Website</a>
 </div>
 
 <script>
@@ -76,48 +124,76 @@ const DEFAULT_USERS = [
   {username:'mod1', password:'mod123', role:'moderator', name:'Moderator 1'},
 ];
 
-async function doLogin(){
-  const username = document.getElementById('l_username').value.trim();
-  const password = document.getElementById('l_password').value;
-  const errBox = document.getElementById('loginErr');
-  const btn = document.getElementById('loginBtn');
-  errBox.style.display = 'none';
+function togglePw(){
+  const pw = document.getElementById('password');
+  const btn = document.getElementById('pwToggleBtn');
+  if(pw.type === 'password'){ pw.type = 'text'; btn.textContent = 'Hide'; }
+  else{ pw.type = 'password'; btn.textContent = 'Show'; }
+}
 
-  if(!username || !password){
-    errBox.textContent = '❌ Username ও Password দুটোই দিন';
-    errBox.style.display = 'block';
-    return;
-  }
+function showError(msg){
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideError(){
+  document.getElementById('errorMsg').style.display = 'none';
+}
 
-  btn.disabled = true; btn.textContent = 'Checking…';
-
-  let users = DEFAULT_USERS;
+async function getUserList(){
   try{
     const doc = await db.collection('shirtory').doc('users').get();
     if(doc.exists && Array.isArray(doc.data().list) && doc.data().list.length){
-      users = doc.data().list;
+      return doc.data().list;
     }
   }catch(err){
-    console.error('User list fetch failed, falling back to default users:', err);
+    console.error('Could not fetch cloud users, falling back to defaults:', err);
+  }
+  return DEFAULT_USERS;
+}
+
+async function handleLogin(e){
+  e.preventDefault();
+  hideError();
+
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('loginBtn');
+  const loadingMsg = document.getElementById('loadingMsg');
+
+  if(!username || !password){
+    showError('❌ Username ও Password দিতে হবে');
+    return false;
   }
 
-  const match = users.find(u =>
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+  loadingMsg.style.display = 'block';
+
+  const list = await getUserList();
+  const match = list.find(u =>
     u.username.toLowerCase() === username.toLowerCase() && u.password === password
   );
 
-  btn.disabled = false; btn.textContent = 'Login';
+  loadingMsg.style.display = 'none';
+  btn.disabled = false;
+  btn.textContent = 'Login';
 
   if(!match){
-    errBox.textContent = '❌ Username বা Password ভুল হয়েছে';
-    errBox.style.display = 'block';
-    return;
+    showError('❌ ভুল Username অথবা Password');
+    return false;
   }
 
   sessionStorage.setItem('shirtory_session', JSON.stringify({
-    username: match.username, role: match.role, name: match.name || match.username
+    username: match.username,
+    role: match.role,
+    name: match.name || match.username
   }));
+
   window.location.href = 'dashboard.html';
+  return false;
 }
 </script>
+
 </body>
 </html>
