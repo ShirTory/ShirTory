@@ -57,6 +57,7 @@
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html{scroll-behavior:smooth}
+    html,body{overflow-x:hidden;max-width:100%}
     body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:15px;line-height:1.6}
     a{color:inherit;text-decoration:none}
     button{cursor:pointer;border:none;font:inherit}
@@ -163,7 +164,7 @@
     .cat-pill:hover,.cat-pill.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 
     /* PRODUCT GRID */
-    .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+    .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px}
     .product-card{
       background:var(--white);border-radius:var(--radius);
       border:1px solid var(--border);overflow:hidden;
