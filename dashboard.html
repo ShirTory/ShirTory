@@ -217,7 +217,10 @@
       </div>
       <div><label>Card Color</label><input id="p_color" type="color" value="#7B1A1A"/></div>
     </div>
-    <label>Image URL (optional)</label><input id="p_image" placeholder="https://..."/>
+    <label>Image 1 - Main (optional)</label><input id="p_image" placeholder="https://..."/>
+    <label>Image 2 (optional)</label><input id="p_image2" placeholder="https://..."/>
+    <label>Image 3 (optional)</label><input id="p_image3" placeholder="https://..."/>
+    <label>Image 4 (optional)</label><input id="p_image4" placeholder="https://..."/>
     <label>Available Sizes</label>
     <div class="size-check" id="p_sizes"></div>
     <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
@@ -326,6 +329,9 @@ function openProductForm(){
   document.getElementById('p_badge').value = '';
   document.getElementById('p_color').value = '#7B1A1A';
   document.getElementById('p_image').value = '';
+  document.getElementById('p_image2').value = '';
+  document.getElementById('p_image3').value = '';
+  document.getElementById('p_image4').value = '';
   document.querySelectorAll('#p_sizes input').forEach(cb=>cb.checked=false);
   document.getElementById('prodModalBg').style.display = 'flex';
 }
@@ -344,7 +350,11 @@ function editProduct(id){
   document.getElementById('p_stock').value = typeof p.stock==='number'?p.stock:0;
   document.getElementById('p_badge').value = p.badge||'';
   document.getElementById('p_color').value = p.color||'#7B1A1A';
-  document.getElementById('p_image').value = p.image||'';
+  const imgs = p.images && p.images.length ? p.images : (p.image ? [p.image] : []);
+  document.getElementById('p_image').value = imgs[0]||'';
+  document.getElementById('p_image2').value = imgs[1]||'';
+  document.getElementById('p_image3').value = imgs[2]||'';
+  document.getElementById('p_image4').value = imgs[3]||'';
   const sizes = p.sizes||[];
   document.querySelectorAll('#p_sizes input').forEach(cb=>cb.checked = sizes.includes(cb.value));
   document.getElementById('prodModalBg').style.display = 'flex';
@@ -357,6 +367,12 @@ async function saveProduct(){
 
   const idVal = document.getElementById('p_id').value;
   const sizes = Array.from(document.querySelectorAll('#p_sizes input:checked')).map(cb=>cb.value);
+  const images = [
+    document.getElementById('p_image').value.trim(),
+    document.getElementById('p_image2').value.trim(),
+    document.getElementById('p_image3').value.trim(),
+    document.getElementById('p_image4').value.trim()
+  ].filter(Boolean);
   const data = {
     id: idVal ? Number(idVal) : nextProductId(),
     name, price,
@@ -366,7 +382,8 @@ async function saveProduct(){
     stock: Number(document.getElementById('p_stock').value)||0,
     badge: document.getElementById('p_badge').value,
     color: document.getElementById('p_color').value,
-    image: document.getElementById('p_image').value.trim(),
+    image: images[0]||'',
+    images,
     sizes
   };
 

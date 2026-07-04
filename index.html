@@ -342,6 +342,22 @@
     .soon-modal p{font-size:0.85rem;color:var(--muted);margin-bottom:22px;line-height:1.6}
     .soon-modal .btn-hero-primary{justify-content:center;width:100%}
 
+    /* QUICK VIEW GALLERY */
+    .qv-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:300;align-items:center;justify-content:center;padding:20px}
+    .qv-overlay.open{display:flex}
+    .qv-modal{background:var(--white);border-radius:14px;max-width:640px;width:100%;max-height:90vh;overflow:auto;box-shadow:var(--shadow-md);position:relative}
+    .qv-close{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;z-index:2}
+    .qv-main{width:100%;aspect-ratio:1/1;background:var(--bg);position:relative;overflow:hidden}
+    .qv-main img{width:100%;height:100%;object-fit:cover}
+    .qv-thumbs{display:flex;gap:8px;padding:12px;flex-wrap:wrap}
+    .qv-thumb{width:64px;height:64px;border-radius:8px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:var(--bg)}
+    .qv-thumb img{width:100%;height:100%;object-fit:cover}
+    .qv-thumb.active{border-color:var(--primary)}
+    .qv-body{padding:8px 20px 24px}
+    .qv-name{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:6px}
+    .qv-code{font-size:0.75rem;color:var(--muted);margin-bottom:12px}
+    .product-img-wrap{cursor:pointer}
+
     /* FLOAT WA */
     .float-wa{position:fixed;bottom:24px;right:24px;background:#25D366;color:#fff;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(37,211,102,0.35);z-index:150;transition:transform .2s}
     .float-wa:hover{transform:scale(1.08)}
@@ -604,6 +620,20 @@
   </div>
 </div>
 
+<!-- PRODUCT QUICK VIEW GALLERY -->
+<div class="qv-overlay" id="qvModal">
+  <div class="qv-modal">
+    <button class="qv-close" onclick="closeQuickView()">✕</button>
+    <div class="qv-main"><img id="qvMainImg" src="" alt=""/></div>
+    <div class="qv-thumbs" id="qvThumbs"></div>
+    <div class="qv-body">
+      <div class="qv-name" id="qvName"></div>
+      <div class="qv-code" id="qvCode"></div>
+      <div id="qvOrderWrap"></div>
+    </div>
+  </div>
+</div>
+
 <footer class="footer">
   <div class="footer-inner">
     <div class="footer-top">
@@ -736,8 +766,43 @@ function renderProducts(filter='all',query=''){
       ? '<button class="wa-btn" disabled style="background:#9ca3af;cursor:not-allowed">Sold Out</button>'
       : '<button class="wa-btn" onclick="quickOrder('+p.id+')"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>Order Now</button>';
 
-    return '<div class="product-card'+(isSoldOut?' soldout':'')+'"><div class="product-img-wrap" style="background:'+p.color+'12">'+bHTML+iHTML+'</div><div class="product-body"><div class="product-name">'+p.name+'</div><div class="product-code">Code: '+(p.code||('ST-'+p.id))+'</div><div class="product-cat">'+(CAT_LABELS[p.category]||p.category)+'</div>'+sizeHTML+priceHTML+stockHTML+'<div class="cart-row">'+waBtn+'</div></div></div>';
+    return '<div class="product-card'+(isSoldOut?' soldout':'')+'"><div class="product-img-wrap" style="background:'+p.color+'12" onclick="openQuickView('+p.id+')">'+bHTML+iHTML+'</div><div class="product-body"><div class="product-name">'+p.name+'</div><div class="product-code">Code: '+(p.code||('ST-'+p.id))+'</div><div class="product-cat">'+(CAT_LABELS[p.category]||p.category)+'</div>'+sizeHTML+priceHTML+stockHTML+'<div class="cart-row">'+waBtn+'</div></div></div>';
   }).join('');
+}
+
+function openQuickView(id){
+  const p = getProducts().find(x=>String(x.id)===String(id));
+  if(!p) return;
+  const imgs = (p.images && p.images.length ? p.images : (p.image ? [p.image] : [])).filter(Boolean);
+  const mainImg = document.getElementById('qvMainImg');
+  const thumbsWrap = document.getElementById('qvThumbs');
+  if(imgs.length){
+    mainImg.src = imgs[0];
+    mainImg.alt = p.name;
+    mainImg.style.display = 'block';
+    thumbsWrap.style.display = imgs.length>1 ? 'flex' : 'none';
+    thumbsWrap.innerHTML = imgs.map((src,i)=>'<div class="qv-thumb'+(i===0?' active':'')+'" onclick="qvSelect(this,\''+src.replace(/'/g,"\\'")+'\')"><img src="'+src+'" alt=""/></div>').join('');
+  } else {
+    mainImg.style.display = 'none';
+    thumbsWrap.style.display = 'none';
+    thumbsWrap.innerHTML = '';
+  }
+  document.getElementById('qvName').textContent = p.name;
+  document.getElementById('qvCode').textContent = 'Code: '+(p.code||('ST-'+p.id));
+  const stock=typeof p.stock==='number'?p.stock:10;
+  const isSoldOut = stock<=0;
+  document.getElementById('qvOrderWrap').innerHTML = isSoldOut
+    ? '<button class="wa-btn" disabled style="background:#9ca3af;cursor:not-allowed">Sold Out</button>'
+    : '<button class="wa-btn" onclick="quickOrder('+p.id+')">Order Now via WhatsApp</button>';
+  document.getElementById('qvModal').classList.add('open');
+}
+function qvSelect(el,src){
+  document.getElementById('qvMainImg').src = src;
+  document.querySelectorAll('.qv-thumb').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+function closeQuickView(){
+  document.getElementById('qvModal').classList.remove('open');
 }
 
 function openSoonModal(cat){
